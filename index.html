@@ -10,13 +10,13 @@
 
     :root{
       /* Background */
-      --bg-1: #06101a; /* deep oceanic */
-      --bg-2: #071422; /* inky */
+      --bg-1: #050b14; /* darker outer background */
+      --bg-2: #07101c; /* inner background slightly lighter */ /* inky */
       --bg-vignette: radial-gradient(60% 60% at 10% 15%, rgba(124,92,255,0.06), transparent 18%), radial-gradient(50% 50% at 90% 85%, rgba(61,220,186,0.04), transparent 18%);
 
       /* Card (contrast intentionally different from background) */
-      --card-top: #0f1a26; /* slightly warmer slate */
-      --card-bottom: #08121a; /* deeper base */
+      --card-top: #141821; /* cool silver-gray highlight */
+      --card-bottom: #0e121a; /* darker base for depth */ /* same as top to avoid sheen */ /* neutral matte base */ /* deeper base */
       --card-border: rgba(255,255,255,0.03);
 
       /* Accents */
@@ -39,7 +39,7 @@
       /* elevation */
       --elevation-1: 0 12px 36px rgba(4,10,32,0.60), 0 5px 12px rgba(4,10,32,0.32);
       --elevation-2: 0 30px 80px rgba(4,10,32,0.74), 0 12px 34px rgba(4,10,32,0.42);
-      --card-shadow: var(--elevation-1), var(--rim);
+      --card-shadow: 0 14px 42px rgba(6,10,24,0.65), 0 6px 18px rgba(6,10,24,0.38), inset 0 1px 0 rgba(255,255,255,0.04);
 
       color-scheme: dark;
     }
@@ -78,19 +78,14 @@
 
     /* card */
     .card{
-      display:flex;align-items:center;gap:18px;padding:18px;border-radius:18px;
-      background: linear-gradient(180deg,var(--card-top), var(--card-bottom));
+      flex-direction:row; /* ensure image stays beside text */$1background: linear-gradient(180deg, var(--card-top) 0%, var(--card-bottom) 100%);
+      /* matte surface: remove reflective lighting */
       box-shadow: var(--card-shadow);
       text-decoration:none;color:inherit;transition:transform .30s cubic-bezier(.2,.9,.3,1),box-shadow .30s,filter .30s;
       overflow:visible;position:relative;min-height:84px;transform-style:preserve-3d;z-index:0;isolation:isolate;
     }
 
-    /* left accent bar to differentiate the card tone clearly */
-    .card::before{
-      content:"";position:absolute;left:0;top:10px;bottom:10px;width:8px;border-radius:10px 0 0 10px;
-      background: linear-gradient(180deg,var(--accent-primary),var(--accent-secondary));box-shadow:0 6px 18px rgba(124,92,255,0.14);
-    }
-
+    
     /* subtle focus ring for keyboard users */
     .card:focus{outline:none}
     .card:focus-visible{box-shadow:var(--elevation-2);transform:translateY(-10px);border-radius:20px}
@@ -109,7 +104,7 @@
     .card:active{transform:translateY(-6px) scale(.998)}
 
     /* thumbnail */
-    .thumb-wrap{position:relative;flex:0 0 auto}
+    
     .thumb{
       width:var(--thumb-size-lg);height:var(--thumb-size-lg);flex:0 0 var(--thumb-size-lg);
       border-radius:12px;object-fit:cover;background:#08121a;border:2px solid rgba(255,255,255,0.03);

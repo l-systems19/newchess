@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Conway's Game of Life — Single File (Responsive UI)</title>
+  <style>
+    :root{--bg:#0f1724;--panel:#0b1220;--accent:#06b6d4;--muted:#94a3b8}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{
+      display:flex;
+      gap:12px;
+      padding:14px;
+      background:linear-gradient(180deg,#081226 0%, #071428 100%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      align-items:stretch;
+      box-sizing:border-box;
+    }
+
+    /* responsive app layout */
+    .app{
+      display:grid;
+      grid-template-columns:1fr 320px;
+      gap:14px;
+      max-width:1200px;
+      width:100%;
+      margin:auto;
+      align-items:start;
+      min-height:0;
+    }
+
+    .canvas-wrap{
+      background:linear-gradient(180deg,#061224,#02121a);
+      border-radius:12px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      align-items:stretch;
+      box-shadow:0 8px 28px rgba(0,0,0,0.6);
+    }
+
+    /* canvas fills available width but maintain max sizes */
+    .board {
+      background:#061423;
+      border-radius:8px;
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      min-height:320px;
+      overflow:hidden;
+    }
+    canvas{
+      border-radius:8px;
+      display:block;
+      width:100%;
+      height:100%;
+      max-height:720px;
+      touch-action:none;             /* prevent double-touch zoom interfering with drawing */
+      -webkit-user-select:none;
+      user-select:none;
+      background:#061423;
+    }
+
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .left-toolbar{display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap}
+    .muted{color:var(--muted);font-size:13px}
+
+    .panel{
+      background:linear-gradient(180deg,#071428,#021018);
+      padding:12px;
+      border-radius:12px;
+      min-height:0;
+      box-shadow:0 8px 28px rgba(0,0,0,0.6);
+    }
+
+    label{font-size:13px;color:var(--muted)}
+    input[type=range]{width:100%}
+    .controls{display:flex;flex-direction:column;gap:12px}
+    .row{display:flex;gap:8px;align-items:center}
+    button{background:var(--accent);border:none;color:#021420;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px}
+    .small{font-size:13px;padding:6px 8px;border-radius:8px}
+    .control-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .footer{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px}
+    .flex{display:flex;gap:8px;align-items:center}
+    .color{width:34px;height:30px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)}
+    .checkbox{display:flex;gap:6px;align-items:center}
+
+    @media (max-width:900px){
+      .app{grid-template-columns:1fr;}
+      .canvas-wrap canvas{height:360px}
+      .panel{order:2}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <div class="canvas-wrap panel">
+      <div class="toolbar">
+        <div class="left-toolbar">
+          <button id="startBtn">Start</button>
+          <button id="stepBtn" class="secondary small">Step</button>
+          <button id="clearBtn" class="secondary small">Clear</button>
+          <button id="randomBtn" class="secondary small">Random</button>
+          <div class="muted" style="margin-left:8px">Generation: <span id="gen">0</span></div>
+        </div>
+        <div class="flex muted">
+          <div>Alive:</div><div id="aliveCount">0</div>
+        </div>
+      </div>
+
+      <div class="board">
+        <canvas id="lifeCanvas" width="1200" height="720" aria-label="Conway Game of Life"></canvas>
+      </div>
+
+      <div class="footer">
+        <div class="muted">Drag to paint. Click to toggle cells. Hold Shift to erase while dragging.</div>
+        <div class="muted">Tip: change cell size or speed in the right panel.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin:4px 0">Settings</h3>
+      <div class="controls">
+        <div>
+          <label>Cell size (px)</label>
+          <input id="cellSize" type="range" min="4" max="40" value="12">
+          <div class="muted">Current: <span id="cellSizeVal">12</span> px</div>
+        </div>
+
+        <div>
+          <label>Speed (generations / second)</label>
+          <input id="speed" type="range" min="1" max="60" value="8">
+          <div class="muted">Current: <span id="speedVal">8</span> gen/s</div>
+        </div>
+
+        <div class="control-grid">
+          <div>
+            <label>Alive color</label>
+            <input id="aliveColor" type="color" value="#06b6d4" class="color">
+          </div>
+          <div>
+            <label>Background color</label>
+            <input id="deadColor" type="color" value="#061423" class="color">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="checkbox"><input id="wrap" type="checkbox" checked><label for="wrap">Wrap edges</label></div>
+          <div class="checkbox"><input id="showGrid" type="checkbox"><label for="showGrid">Show grid</label></div>
+        </div>
+
+        <div class="row">
+          <button id="resizeBtn" class="small secondary">Resize to fit</button>
+          <button id="exportBtn" class="small secondary">Export PNG</button>
+        </div>
+
+        <div>
+          <label>Random fill probability</label>
+          <input id="randomProb" type="range" min="1" max="100" value="28">
+          <div class="muted">Probability: <span id="randomProbVal">28</span>%</div>
+        </div>
+
+        <div style="display:flex;gap:6px;align-items:center;justify-content:space-between">
+          <div class="muted">Controls</div>
+          <div style="display:flex;gap:6px">
+            <button id="invertBtn" class="small secondary">Invert</button>
+            <button id="clearBufferBtn" class="small secondary">Clear Buffer</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // DOM
+      const canvas = document.getElementById('lifeCanvas');
+
+      // We'll use a ctx variable that we re-create after resizing (UI-only)
+      let ctx = canvas.getContext('2d', { alpha: false });
+
+      const startBtn = document.getElementById('startBtn');
+      const stepBtn = document.getElementById('stepBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const randomBtn = document.getElementById('randomBtn');
+      const genEl = document.getElementById('gen');
+      const aliveCountEl = document.getElementById('aliveCount');
+      const cellSizeRange = document.getElementById('cellSize');
+      const cellSizeVal = document.getElementById('cellSizeVal');
+      const speedRange = document.getElementById('speed');
+      const speedVal = document.getElementById('speedVal');
+      const aliveColorInput = document.getElementById('aliveColor');
+      const deadColorInput = document.getElementById('deadColor');
+      const wrapToggle = document.getElementById('wrap');
+      const showGridToggle = document.getElementById('showGrid');
+      const resizeBtn = document.getElementById('resizeBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const randomProb = document.getElementById('randomProb');
+      const randomProbVal = document.getElementById('randomProbVal');
+      const invertBtn = document.getElementById('invertBtn');
+      const clearBufferBtn = document.getElementById('clearBufferBtn');
+
+      // State (exactly as in your code)
+      let cellSize = Number(cellSizeRange.value);
+      let speed = Number(speedRange.value);
+      let running = false;
+      let generation = 0;
+      let cols = 0, rows = 0;
+      let grid = null; // Uint8Array
+      let buffer = null; // Uint8Array
+      let timer = null; // interval handle
+      let aliveColor = aliveColorInput.value;
+      let deadColor = deadColorInput.value;
+      let showGrid = false;
+      let wrap = true;
+
+      // ---------------- UI / Canvas helpers (changed) ----------------
+      // These are UI-only changes to make canvas crisp on mobile/desktop
+      function fitCanvasToContainer() {
+        // Prefer clientWidth/clientHeight (stable CSS pixels); fall back to rect if needed
+        const cssW = Math.max(100, Math.floor(canvas.clientWidth || canvas.getBoundingClientRect().width || 800));
+        const cssH = Math.max(100, Math.floor(canvas.clientHeight || canvas.getBoundingClientRect().height || 480));
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+        // set CSS size explicitly (keeps layout stable)
+        canvas.style.width = cssW + 'px';
+        canvas.style.height = cssH + 'px';
+
+        // Only resize backing store when it actually changes (resizing clears the bitmap)
+        const backingW = Math.floor(cssW * dpr);
+        const backingH = Math.floor(cssH * dpr);
+        if (canvas.width !== backingW || canvas.height !== backingH) {
+          canvas.width = backingW;
+          canvas.height = backingH;
+        }
+
+        // Reset context & scale to CSS pixels
+        ctx = canvas.getContext('2d', { alpha: false });
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.imageSmoothingEnabled = false;
+      }
+
+      // createGrid now computes cols/rows in CSS pixels (so cellSize matches visual)
+      function createGrid() {
+        // Use CSS pixels dimensions (clientWidth/clientHeight are CSS pixels)
+        const cssW = canvas.clientWidth || parseFloat(canvas.style.width);
+        const cssH = canvas.clientHeight || parseFloat(canvas.style.height);
+        cols = Math.max(1, Math.floor(cssW / cellSize));
+        rows = Math.max(1, Math.floor(cssH / cellSize));
+        grid = new Uint8Array(cols * rows);
+        buffer = new Uint8Array(cols * rows);
+        generation = 0;
+        updateStats();
+      }
+
+      // keep your index and inBounds exactly the same
+      function index(r, c) { return r * cols + c; }
+      function inBounds(r, c) { return r >= 0 && r < rows && c >= 0 && c < cols; }
+
+      // ---------------- Simulation logic (LEFT INTACT) ----------------
+      function countNeighbors(r, c) {
+        let n = 0;
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            let rr = r + dr;
+            let cc = c + dc;
+            if (wrap) {
+              if (rr < 0) rr = rows - 1;
+              else if (rr >= rows) rr = 0;
+              if (cc < 0) cc = cols - 1;
+              else if (cc >= cols) cc = 0;
+              n += grid[index(rr, cc)];
+            } else {
+              if (inBounds(rr, cc)) n += grid[index(rr, cc)];
+            }
+          }
+        }
+        return n;
+      }
+
+      function step() {
+        const len = grid.length;
+        let alive = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const i = index(r, c);
+            const n = countNeighbors(r, c);
+            const aliveNow = grid[i] === 1;
+            let next = 0;
+            if (aliveNow) {
+              next = (n === 2 || n === 3) ? 1 : 0;
+            } else {
+              next = (n === 3) ? 1 : 0;
+            }
+            buffer[i] = next;
+            alive += next;
+          }
+        }
+        // swap
+        const tmp = grid;
+        grid = buffer;
+        buffer = tmp;
+        generation++;
+        updateStats();
+        render();
+      }
+
+      // ---------------- Stable render (uses grid size rather than transient clientHeight) ----------------
+      function render() {
+        // draw area based on grid (stable across visual viewport changes)
+        const drawW = cols * cellSize;
+        const drawH = rows * cellSize;
+
+        // fill background (uses deadColor from UI)
+        ctx.fillStyle = deadColor;
+        ctx.fillRect(0, 0, drawW, drawH);
+
+        // draw alive cells
+        ctx.fillStyle = aliveColor;
+        let aliveCount = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (grid[index(r, c)]) {
+              ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+              aliveCount++;
+            }
+          }
+        }
+        // draw grid lines
+        if (showGrid && cellSize >= 6) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+          ctx.beginPath();
+          for (let x = 0; x <= cols; x++) {
+            ctx.moveTo(x * cellSize + 0.5, 0);
+            ctx.lineTo(x * cellSize + 0.5, rows * cellSize);
+          }
+          for (let y = 0; y <= rows; y++) {
+            ctx.moveTo(0, y * cellSize + 0.5);
+            ctx.lineTo(cols * cellSize, y * cellSize + 0.5);
+          }
+          ctx.stroke();
+        }
+        aliveCountEl.textContent = aliveCount;
+      }
+
+      function updateStats() {
+        genEl.textContent = generation;
+      }
+
+      function start() {
+        if (running) return;
+        running = true;
+        startBtn.textContent = 'Pause';
+        clearInterval(timer);
+        timer = setInterval(step, Math.max(1, Math.round(1000 / speed)));
+      }
+
+      function pause() {
+        if (!running) return;
+        running = false;
+        startBtn.textContent = 'Start';
+        clearInterval(timer);
+        timer = null;
+      }
+
+      function toggleRun() { if (running) pause(); else start(); }
+
+      function clearGrid() {
+        grid.fill(0);
+        generation = 0;
+        updateStats();
+        render();
+      }
+
+      function randomize(probPercent) {
+        const p = Math.max(0, Math.min(100, probPercent)) / 100;
+        let alive = 0;
+        for (let i = 0; i < grid.length; i++) {
+          grid[i] = Math.random() < p ? 1 : 0;
+          alive += grid[i];
+        }
+        generation = 0;
+        updateStats();
+        render();
+      }
+
+      function invertGrid() {
+        for (let i = 0; i < grid.length; i++) grid[i] = grid[i] ? 0 : 1;
+        render();
+      }
+
+      function clearBuffer() {
+        buffer.fill(0);
+        render();
+      }
+
+      function exportPNG() {
+        const data = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = data;
+        a.download = `game_of_life_gen_${generation}.png`;
+        a.click();
+      }
+
+      // ---------------- Pointer / touch painting (UI-only update) ----------------
+      let painting = false;
+      let paintValue = 1;
+
+      // Convert pointer coordinates to grid cell using CSS pixels
+      function canvasToCellFromEvent(ev) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX = ev.clientX, clientY = ev.clientY;
+        if (ev.touches && ev.touches[0]) {
+          clientX = ev.touches[0].clientX;
+          clientY = ev.touches[0].clientY;
+        } else if (ev.changedTouches && ev.changedTouches[0]) {
+          clientX = ev.changedTouches[0].clientX;
+          clientY = ev.changedTouches[0].clientY;
+        }
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        // Map to grid using columns/rows and the CSS width/height
+        const c = Math.floor(x / (rect.width / cols));
+        const r = Math.floor(y / (rect.height / rows));
+        return { r, c };
+      }
+
+      // pointerdown (works for mouse + touch + pen)
+      canvas.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        canvas.setPointerCapture?.(e.pointerId);
+        painting = true;
+        paintValue = e.shiftKey ? 0 : 1;
+        const pos = canvasToCellFromEvent(e);
+        if (!inBounds(pos.r, pos.c)) return;
+        grid[index(pos.r, pos.c)] = paintValue;
+        render();
+      }, { passive: false });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!painting) return;
+        const pos = canvasToCellFromEvent(e);
+        if (!inBounds(pos.r, pos.c)) return;
+        grid[index(pos.r, pos.c)] = paintValue;
+        render();
+      }, { passive: true });
+
+      function stopPainting(e) {
+        painting = false;
+        try { canvas.releasePointerCapture?.(e?.pointerId); } catch (err) {}
+      }
+      canvas.addEventListener('pointerup', stopPainting);
+      canvas.addEventListener('pointercancel', stopPainting);
+
+      // touch fallback for some older browsers
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        painting = true;
+        paintValue = e.shiftKey ? 0 : 1;
+        const pos = canvasToCellFromEvent(e);
+        if (!inBounds(pos.r, pos.c)) return;
+        grid[index(pos.r, pos.c)] = paintValue;
+        render();
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!painting) return;
+        const pos = canvasToCellFromEvent(e);
+        if (!inBounds(pos.r, pos.c)) return;
+        grid[index(pos.r, pos.c)] = paintValue;
+        render();
+      }, { passive: false });
+
+      window.addEventListener('mouseup', () => { painting = false; });
+
+      // click toggles a cell (keeps original behavior)
+      canvas.addEventListener('click', (e) => {
+        const pos = canvasToCellFromEvent(e);
+        if (!inBounds(pos.r, pos.c)) return;
+        grid[index(pos.r, pos.c)] = grid[index(pos.r, pos.c)] ? 0 : 1;
+        render();
+      });
+
+      // ---------------- UI wiring (same handlers as original) ----------------
+      startBtn.addEventListener('click', toggleRun);
+      stepBtn.addEventListener('click', () => { pause(); step(); });
+      clearBtn.addEventListener('click', () => { pause(); clearGrid(); });
+      randomBtn.addEventListener('click', () => { pause(); randomize(Number(randomProb.value)); });
+
+      cellSizeRange.addEventListener('input', (e) => {
+        cellSize = Number(e.target.value);
+        cellSizeVal.textContent = cellSize;
+      });
+
+      // when user finishes changing cell size, rebuild grid to keep pattern sensible
+      cellSizeRange.addEventListener('change', (e) => {
+        cellSize = Number(e.target.value);
+        cellSizeVal.textContent = cellSize;
+        const wasRunning = running;
+        if (wasRunning) pause();
+        fitCanvasToContainer();
+        createGrid();
+        render();
+        if (wasRunning) start();
+      });
+
+      speedRange.addEventListener('input', (e) => {
+        speed = Number(e.target.value);
+        speedVal.textContent = speed;
+        if (running) {
+          clearInterval(timer);
+          timer = setInterval(step, Math.max(1, Math.round(1000 / speed)));
+        }
+      });
+
+      aliveColorInput.addEventListener('input', (e) => { aliveColor = e.target.value; render(); });
+      deadColorInput.addEventListener('input', (e) => { deadColor = e.target.value; render(); });
+      showGridToggle.addEventListener('change', (e) => { showGrid = e.target.checked; render(); });
+      wrapToggle.addEventListener('change', (e) => { wrap = e.target.checked; });
+
+      resizeBtn.addEventListener('click', () => {
+        const wasRunning = running;
+        if (wasRunning) pause();
+        fitCanvasToContainer();
+        createGrid();
+        render();
+        if (wasRunning) start();
+      });
+
+      exportBtn.addEventListener('click', exportPNG);
+      randomProb.addEventListener('input', (e) => { randomProbVal.textContent = e.target.value; });
+      invertBtn.addEventListener('click', () => { pause(); invertGrid(); });
+      clearBufferBtn.addEventListener('click', clearBuffer);
+
+      // keyboard shortcuts
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') { e.preventDefault(); toggleRun(); }
+        if (e.key === 'r' || e.key === 'R') { pause(); randomize(Number(randomProb.value)); }
+        if (e.key === 'c' || e.key === 'C') { pause(); clearGrid(); }
+        if (e.key === 's' || e.key === 'S') { pause(); step(); }
+      });
+
+      // ---------------- initialization ----------------
+      function debounce(fn, ms = 80) {
+        let t = null;
+        return (...args) => {
+          clearTimeout(t);
+          t = setTimeout(() => fn(...args), ms);
+        };
+      }
+
+      function init() {
+        fitCanvasToContainer();
+        createGrid();
+        cellSizeVal.textContent = cellSize;
+        speedVal.textContent = speed;
+        randomProbVal.textContent = randomProb.value;
+        render();
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            const wasRunning = running;
+            if (wasRunning) pause();
+            fitCanvasToContainer();
+            createGrid();
+            render();
+            if (wasRunning) start();
+          }, 120);
+        });
+
+        // Repaint & adjust backing store when the visual viewport changes (mobile address-bars)
+        if (window.visualViewport) {
+          // When the visual viewport *resizes* (orientation change / address-bar hide) we update backing store.
+          const handleViewportResize = debounce(() => {
+            fitCanvasToContainer();
+            // keep the existing grid (do not recreate grid here) — just repaint with new backing store
+            render();
+          }, 80);
+
+          // When the visual viewport *scrolls* we avoid resizing the backing store (that clears the canvas).
+          // Instead, just reset context transform (in case dpr changed) and repaint quickly.
+          const handleViewportScroll = debounce(() => {
+            const dpr = Math.max(1, window.devicePixelRatio || 1);
+            // reset transform/context without changing canvas.width/height
+            ctx = canvas.getContext('2d', { alpha: false });
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = false;
+            render();
+          }, 25);
+
+          window.visualViewport.addEventListener('resize', handleViewportResize);
+          window.visualViewport.addEventListener('scroll', handleViewportScroll);
+        }
+
+        // Some mobile browsers may clear canvases when tab is hidden / address bar toggles — repaint on visibility
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            fitCanvasToContainer();
+            render();
+          }
+        });
+      }
+
+      // start
+      init();
+    })();
+  </script>
+</body>
+</html>

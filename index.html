@@ -6,156 +6,99 @@
 <title>Games</title>
 
 <style>
-/* ---------- RESET ---------- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Roboto, sans-serif;
-}
-
-/* ---------- BACKGROUND ---------- */
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
 body {
-  min-height: 100vh;
+  min-height:100vh;
   background:
     radial-gradient(circle at 20% 20%, #2b2bff33, transparent 40%),
     radial-gradient(circle at 80% 80%, #ff2b2b33, transparent 40%),
     linear-gradient(135deg, #0f0f14, #09090d);
-  color: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
-
-/* ---------- CONTAINER ---------- */
 .container {
-  width: 90%;
-  max-width: 900px;
-  background: rgba(255, 255, 255, 0.06);
+  width:90%;
+  max-width:900px;
+  background: rgba(255,255,255,0.06);
   backdrop-filter: blur(14px);
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  border-radius:20px;
+  padding:40px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
 }
-
-/* ---------- HEADER ---------- */
-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
+header { text-align:center; margin-bottom:40px; }
 header h1 {
-  font-size: 3rem;
-  letter-spacing: 2px;
-  font-weight: 700;
-  background: linear-gradient(90deg, #ffffff, #b8b8ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size:3rem;
+  letter-spacing:2px;
+  font-weight:700;
+  background: linear-gradient(90deg, #fff, #b8b8ff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
-
-/* ---------- GAME GRID ---------- */
 .games {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 25px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:25px;
 }
-
-/* ---------- GAME CARD ---------- */
 .game-card {
-  position: relative;
-  display: block;
-  padding: 30px;
-  border-radius: 16px;
+  position:relative;
+  display:block;
+  padding:30px;
+  border-radius:16px;
   background: linear-gradient(145deg, #1a1a22, #111118);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5),
-              0 4px 6px rgba(0,0,0,0.3),
-              inset 0 0 0 1px rgba(255,255,255,0.08);
-  cursor: pointer;
-  transition: transform 0.35s cubic-bezier(.25,.8,.25,1), 
-              box-shadow 0.35s cubic-bezier(.25,.8,.25,1);
-  text-decoration: none;
-  color: inherit;
-  overflow: hidden;
-  perspective: 1000px;
+  box-shadow:0 10px 20px rgba(0,0,0,0.5),0 4px 6px rgba(0,0,0,0.3),inset 0 0 0 1px rgba(255,255,255,0.08);
+  cursor:pointer;
+  transition: transform 0.35s cubic-bezier(.25,.8,.25,1), box-shadow 0.35s cubic-bezier(.25,.8,.25,1);
+  text-decoration:none;
+  color:inherit;
+  overflow:hidden;
+  perspective:1000px;
 }
-
 .game-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:16px;
   background: linear-gradient(120deg, transparent, rgba(255,255,255,0.08), transparent);
-  opacity: 0;
+  opacity:0;
   transition: opacity 0.35s ease;
-  pointer-events: none;
+  pointer-events:none;
 }
-
-/* ---------- 3D HOVER EFFECT ---------- */
-.game-card:hover {
-  transform: translateY(-12px) rotateX(2deg) rotateY(4deg) scale(1.03);
-  box-shadow: 0 25px 60px rgba(0,0,0,0.8),
-              0 10px 20px rgba(0,0,0,0.4),
-              inset 0 0 0 1px rgba(255,255,255,0.12);
-}
-
-.game-card:hover::before {
-  opacity: 1;
-}
-
-/* ---------- CARD CONTENT ---------- */
-.game-title {
-  font-size: 1.6rem;
-  margin-bottom: 10px;
-}
-
-.game-desc {
-  font-size: 0.95rem;
-  color: #bdbdff;
-  opacity: 0.9;
-}
-
-/* ---------- MOBILE TOUCH HOVER FIX ---------- */
-@media (hover: none) {
-  .game-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08),
-                0 10px 30px rgba(0,0,0,0.6);
-  }
-}
+.game-card:hover { transform: translateY(-12px) rotateX(2deg) rotateY(4deg) scale(1.03); box-shadow:0 25px 60px rgba(0,0,0,0.8),0 10px 20px rgba(0,0,0,0.4),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.game-card:hover::before { opacity:1; }
+.game-title { font-size:1.6rem; margin-bottom:10px; }
+.game-desc { font-size:0.95rem; color:#bdbdff; opacity:0.9; }
+@media(hover:none){.game-card:hover{transform:translateY(-8px) scale(1.02); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08),0 10px 30px rgba(0,0,0,0.6);}}
 </style>
 </head>
 
 <body>
-
 <div class="container">
-  <header>
-    <h1>Games</h1>
-  </header>
-
+  <header><h1>Games</h1></header>
   <section class="games">
+
     <a class="game-card" href="chess.html">
       <div class="game-title">♟ Chess</div>
-      <div class="game-desc">
-        Play classic chess against AI or another player
-      </div>
+      <div class="game-desc">Play classic chess against AI or another player</div>
     </a>
 
-    <a class="game-card" href="tetris.html">
-      <div class="game-title">🟦 Tetris</div>
-      <div class="game-desc">
-        Classic block-stacking fun
-      </div>
+    <a class="game-card" href="checkers.html">
+      <div class="game-title">⛀ Checkers</div>
+      <div class="game-desc">Classic checkers with AI and mandatory-jump highlighting</div>
     </a>
 
-    <a class="game-card" href="sudoku.html">
-      <div class="game-title">🔢 Sudoku</div>
-      <div class="game-desc">
-        Sharpen your logic with puzzles
-      </div>
+    <a class="game-card" href="conway.html">
+      <div class="game-title">🟩 Conway's Game of Life</div>
+      <div class="game-desc">Explore cellular automata in a 2D grid</div>
+    </a>
+
+    <a class="game-card" href="othello.html">
+      <div class="game-title">⚫ Othello / Reversi</div>
+      <div class="game-desc">Flip discs against a strong AI</div>
     </a>
 
   </section>
 </div>
-
 </body>
 </html>

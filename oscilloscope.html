@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oscilloscope Simulator — Fixed & Stable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#031022;--muted:#9fb2ce;--accent:#4ee3a1;--accent2:#27c0ff}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#031022 0%, #071426 60%);color:#e6eef8}
+    header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#3ee7b5,#3aa6ff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#042}
+    .top-menu{display:flex;gap:8px;align-items:center}
+    .menu-btn{background:rgba(255,255,255,0.02);padding:8px 12px;border-radius:10px;font-weight:600;color:var(--muted);border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .app{display:flex;gap:18px;padding:14px;max-width:1300px;margin:0 auto}
+    .left{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:14px;min-height:420px}
+    .right{width:380px;min-width:260px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+    .scope-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    canvas{display:block;width:100%;height:480px;border-radius:10px;background:linear-gradient(180deg,#07162a,#021026);box-shadow:inset 0 2px 25px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
+    .panel{background:transparent;border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,0.02)}
+    .control-group{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:8px 0}
+    .range{width:100%}
+    input[type=range]{-webkit-appearance:none;height:8px;border-radius:6px;background:linear-gradient(90deg,#283241,#091220);outline:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 2px 8px rgba(78,227,161,0.15)}
+    .btn{padding:8px 10px;border-radius:10px;border:none;background:rgba(255,255,255,0.04);color:var(--muted);font-weight:600;cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#042}
+    .chip{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);font-weight:600;color:var(--muted);cursor:pointer}
+    .chip.active{background:rgba(78,227,161,0.12);color:var(--accent);border-color:rgba(78,227,161,0.12)}
+    .small{font-size:12px;color:var(--muted)}
+    @media (max-width:980px){.app{flex-direction:column}.right{width:100%}canvas{height:360px}}
+    @media (max-width:520px){header{padding:8px}.logo{width:40px;height:40px}canvas{height:260px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="logo">OS</div><div><div style="font-weight:800">OscilloSim Pro</div><div class="small">Stable & realistic oscilloscope</div></div></div>
+    <div class="top-menu"><button class="menu-btn">File</button><button class="menu-btn">Capture</button><button class="menu-btn">Help</button></div>
+  </header>
+
+  <main class="app">
+    <section class="left">
+      <div class="scope-top">
+        <div><div style="font-weight:700">Oscilloscope — Live</div><div class="small">Timebase: <span id="timebaseLabel">5 ms/div</span> · SR: <span id="srLabel">100 kS/s</span></div></div>
+        <div style="display:flex;gap:8px"><button class="btn" id="runBtn">Running</button><button class="btn" id="singleBtn">Single</button><button class="btn" id="snapBtn">PNG</button><button class="btn" id="csvBtn">CSV</button></div>
+      </div>
+
+      <div style="position:relative">
+        <canvas id="scopeCanvas" aria-label="Oscilloscope display"></canvas>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <div class="panel" style="flex:1;min-width:200px"><div class="small">Measurements</div><div style="display:flex;gap:8px;margin-top:8px"><div class="chip">RMS</div><div class="chip">Freq</div><div class="chip">Vpp</div></div></div>
+        <div class="panel" style="width:220px;min-width:160px"><div class="small">Display</div><div style="display:flex;gap:8px;margin-top:8px"><div class="chip active" id="gridToggle">Grid</div><div class="chip" id="persistenceToggle">Persistence</div><div class="chip" id="xyToggle">XY</div></div></div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">Controls</div><div class="small">Responsive</div></div>
+
+      <div class="panel">
+        <div class="small">Channel 1</div>
+        <div class="control-group"><label>Enable</label><input type="checkbox" id="ch1Enable" checked></div>
+        <div class="control-group"><label>Wave</label><select id="ch1Wave"><option value="sine">sine</option><option value="square">square</option><option value="triangle">triangle</option><option value="saw">saw</option><option value="noise">noise</option></select></div>
+        <div class="control-group"><label>Freq (Hz)</label><input id="ch1Freq" type="range" min="0.5" max="20000" value="440" class="range"><div class="small" id="ch1FreqVal">440</div></div>
+        <div class="control-group"><label>Amplitude (V)</label><input id="ch1Amp" type="range" min="0.01" max="12" step="0.01" value="1" class="range"><div class="small" id="ch1AmpVal">1.00</div></div>
+        <div class="control-group"><label>Offset (V)</label><input id="ch1Offset" type="range" min="-6" max="6" step="0.01" value="0" class="range"><div class="small" id="ch1OffVal">0.00</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="small">Channel 2</div>
+        <div class="control-group"><label>Enable</label><input type="checkbox" id="ch2Enable" checked></div>
+        <div class="control-group"><label>Wave</label><select id="ch2Wave"><option value="sine">sine</option><option value="square">square</option><option value="triangle">triangle</option><option value="saw">saw</option><option value="noise">noise</option></select></div>
+        <div class="control-group"><label>Freq (Hz)</label><input id="ch2Freq" type="range" min="0.5" max="20000" value="660" class="range"><div class="small" id="ch2FreqVal">660</div></div>
+        <div class="control-group"><label>Amplitude (V)</label><input id="ch2Amp" type="range" min="0.01" max="12" step="0.01" value="0.8" class="range"><div class="small" id="ch2AmpVal">0.80</div></div>
+        <div class="control-group"><label>Offset (V)</label><input id="ch2Offset" type="range" min="-6" max="6" step="0.01" value="0" class="range"><div class="small" id="ch2OffVal">0.00</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="small">Timebase & Trigger</div>
+        <div class="control-group"><label>Time/div (ms)</label><input id="timebase" type="range" min="0.01" max="100" step="0.01" value="5" class="range"></div>
+        <div class="control-group"><label>Sample Rate (kS/s)</label><input id="sampleRate" type="range" min="1" max="5000" value="100" class="range"><div class="small" id="srVal">100</div></div>
+        <div class="control-group"><label>Trigger Level (V)</label><input id="triggerLevel" type="range" min="-6" max="6" step="0.01" value="0" class="range"></div>
+        <div class="control-group"><label>Trigger Mode</label><select id="triggerMode"><option value="auto">Auto</option><option value="normal">Normal</option><option value="single">Single</option></select></div>
+        <div class="control-group"><label>Edge</label><select id="triggerEdge"><option value="rising">Rising</option><option value="falling">Falling</option></select></div>
+      </div>
+
+      <div class="panel">
+        <div class="small">Display</div>
+        <div class="control-group"><label>Grid Lines</label><input id="gridLines" type="range" min="4" max="20" step="1" value="10" class="range"></div>
+        <div class="control-group"><label>Brightness</label><input id="brightness" type="range" min="0.3" max="1.8" step="0.01" value="1" class="range"></div>
+        <div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="fftBtn">FFT</button><button class="btn" id="autozBtn">AutoScale</button></div>
+      </div>
+
+    </aside>
+  </main>
+
+  <footer style="padding:8px 18px;color:var(--muted);text-align:center">OscilloSim Pro — Fixed & stable build</footer>
+
+  <script>
+  (function(){
+    // canvas setup
+    const canvas = document.getElementById('scopeCanvas');
+    const ctx = canvas.getContext('2d');
+    let DPR = Math.max(1, window.devicePixelRatio || 1);
+    function resizeCanvas(){
+      const rect = canvas.getBoundingClientRect();
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      canvas.width = Math.max(1, Math.floor(rect.width * DPR));
+      canvas.height = Math.max(1, Math.floor(rect.height * DPR));
+      // scale drawing so that we can draw using CSS pixels (clientWidth/clientHeight)
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    // set an initial size if canvas has no explicit CSS height
+    if(!canvas.style.height) canvas.style.height = '480px';
+    resizeCanvas();
+
+    // UI refs
+    const el = id => document.getElementById(id);
+    const ch1Enable = el('ch1Enable'), ch1Wave=el('ch1Wave'), ch1Freq=el('ch1Freq'), ch1Amp=el('ch1Amp'), ch1Offset=el('ch1Offset');
+    const ch2Enable = el('ch2Enable'), ch2Wave=el('ch2Wave'), ch2Freq=el('ch2Freq'), ch2Amp=el('ch2Amp'), ch2Offset=el('ch2Offset');
+    const timebase = el('timebase'), sampleRate = el('sampleRate'), triggerLevel = el('triggerLevel'), triggerMode = el('triggerMode'), triggerEdge = el('triggerEdge');
+    const gridToggle = el('gridToggle'), persistenceToggle=el('persistenceToggle'), xyToggle=el('xyToggle');
+    const gridLines = el('gridLines'), brightness = el('brightness');
+    const runBtn = el('runBtn'), singleBtn=el('singleBtn'), snapBtn=el('snapBtn'), csvBtn=el('csvBtn'), fftBtn=el('fftBtn'), autozBtn=el('autozBtn');
+    const ch1FreqVal = el('ch1FreqVal'), ch1AmpVal=el('ch1AmpVal'), ch1OffVal=el('ch1OffVal');
+    const ch2FreqVal = el('ch2FreqVal'), ch2AmpVal=el('ch2AmpVal'), ch2OffVal=el('ch2OffVal');
+    const timebaseLabel = el('timebaseLabel'), srLabel = el('srLabel'), srVal = el('srVal');
+
+    // state
+    let running = true; let persistence=false; let gridOn=true; let xyMode=false; let capturedData=null;
+    updateUILabels();
+
+    // waveform generator
+    function makeWave(type, freq, amp, offset, phase=0){
+      const twoPi = Math.PI*2;
+      return t => {
+        const p = (t*freq + phase) % 1; // fraction
+        switch(type){
+          case 'sine': return Math.sin(twoPi*p)*amp + offset;
+          case 'square': return (p<0.5?1:-1)*amp + offset;
+          case 'triangle': return ((Math.abs((p*2)-1)*2)-1)*amp + offset;
+          case 'saw': return ((p*2)-1)*amp + offset;
+          case 'noise': return (Math.random()*2-1)*amp + offset;
+          default: return 0;
+        }
+      }
+    }
+
+    // simple radix-2 FFT for magnitude (works for power-of-two lengths)
+    function fftReal(input){
+      const N = input.length;
+      if((N & (N-1)) !== 0) throw new Error('FFT input length must be power of two');
+      const Re = new Float32Array(N); const Im = new Float32Array(N);
+      for(let i=0;i<N;i++) Re[i]=input[i];
+      const bits = Math.log2(N)|0;
+      // bit reversal permutation
+      for(let i=0;i<N;i++){
+        let j=0, x=i;
+        for(let k=0;k<bits;k++){ j=(j<<1)|(x&1); x>>=1; }
+        if(j>i){ let tr=Re[i]; Re[i]=Re[j]; Re[j]=tr; let ti=Im[i]; Im[i]=Im[j]; Im[j]=ti; }
+      }
+      for(let len=2; len<=N; len<<=1){
+        const ang = -2*Math.PI/len;
+        const wlenRe = Math.cos(ang), wlenIm = Math.sin(ang);
+        for(let i=0;i<N;i+=len){
+          let uRe=1, uIm=0;
+          for(let j=0;j<len/2;j++){
+            const aRe = Re[i+j], aIm = Im[i+j];
+            const bRe = Re[i+j+len/2]*uRe - Im[i+j+len/2]*uIm;
+            const bIm = Re[i+j+len/2]*uIm + Im[i+j+len/2]*uRe;
+            Re[i+j] = aRe + bRe; Im[i+j] = aIm + bIm;
+            Re[i+j+len/2] = aRe - bRe; Im[i+j+len/2] = aIm - bIm;
+            const tmpRe = uRe*wlenRe - uIm*wlenIm;
+            const tmpIm = uRe*wlenIm + uIm*wlenRe;
+            uRe = tmpRe; uIm = tmpIm;
+          }
+        }
+      }
+      const mag = new Float32Array(N/2);
+      for(let i=0;i<N/2;i++) mag[i] = Math.hypot(Re[i], Im[i]);
+      return mag;
+    }
+
+    function updateUILabels(){
+      ch1FreqVal.textContent = Number(ch1Freq.value).toFixed(2);
+      ch1AmpVal.textContent = Number(ch1Amp.value).toFixed(2);
+      ch1OffVal.textContent = Number(ch1Offset.value).toFixed(2);
+      ch2FreqVal.textContent = Number(ch2Freq.value).toFixed(2);
+      ch2AmpVal.textContent = Number(ch2Amp.value).toFixed(2);
+      ch2OffVal.textContent = Number(ch2Offset.value).toFixed(2);
+      timebaseLabel.textContent = Number(timebase.value) + ' ms/div';
+      srLabel.textContent = Number(sampleRate.value) + ' kS/s'; if(srVal) srVal.textContent = Number(sampleRate.value);
+    }
+
+    // drawing helpers (use CSS pixels for coordinates)
+    function drawGrid(cssW, cssH, lines, bright){
+      ctx.save();
+      ctx.fillStyle = '#021426'; ctx.fillRect(0,0,cssW,cssH);
+      if(!gridOn){ ctx.restore(); return; }
+      const gx = cssW/lines, gy = cssH/lines;
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,'+(0.03*bright)+')';
+      for(let i=0;i<=lines;i++){
+        const x = Math.round(i*gx)+0.5; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,cssH); ctx.stroke();
+      }
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,'+(0.02*bright)+')';
+      for(let j=0;j<=lines;j++){
+        const y = Math.round(j*gy)+0.5; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cssW,y); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawTrace(samples, color, cssW, cssH, vscale, voffset, thickness=2){
+      if(!samples || samples.length===0) return;
+      ctx.save(); ctx.lineWidth = thickness; ctx.strokeStyle = color; ctx.beginPath();
+      const L = samples.length;
+      for(let i=0;i<L;i++){
+        const x = (i/(L-1))*cssW;
+        const y = (cssH/2) - ((samples[i]-voffset) * vscale);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke(); ctx.restore();
+    }
+
+    function findTriggerIndex(samples, level, edge){
+      for(let i=1;i<samples.length;i++){
+        if(edge==='rising' && samples[i-1]<level && samples[i]>=level) return i;
+        if(edge==='falling' && samples[i-1]>level && samples[i]<=level) return i;
+      }
+      return -1;
+    }
+
+    // main render
+    function render(){
+      resizeCanvas();
+      const cssW = canvas.clientWidth, cssH = canvas.clientHeight;
+      // compute sample buffer size
+      const msPerDiv = Math.max(0.00001, Number(timebase.value));
+      const totalSec = (msPerDiv/1000)*10; // 10 divisions
+      const sr = Math.max(1, Number(sampleRate.value)) * 1000; // samples/sec
+      let desired = Math.max(256, Math.floor(totalSec * sr));
+      // round up to next power of two
+      let N=1; while(N<desired) N<<=1; if(N>131072) N=131072;
+      const dt = totalSec / N;
+
+      // make generators
+      const g1 = makeWave(ch1Wave.value, Number(ch1Freq.value), Number(ch1Amp.value), Number(ch1Offset.value));
+      const g2 = makeWave(ch2Wave.value, Number(ch2Freq.value), Number(ch2Amp.value), Number(ch2Offset.value));
+
+      // fill buffers
+      const buf1 = new Float32Array(N); const buf2 = new Float32Array(N);
+      for(let i=0;i<N;i++){ const t=i*dt; buf1[i] = ch1Enable.checked ? g1(t) : 0; buf2[i] = ch2Enable.checked ? g2(t) : 0; }
+
+      // trigger
+      const trigLevel = Number(triggerLevel.value); const edge = triggerEdge.value;
+      let triggerIndex = findTriggerIndex(buf1, trigLevel, edge);
+      if(triggerMode.value==='auto' && triggerIndex===-1) triggerIndex = Math.floor(N/4);
+      if(triggerMode.value==='normal' && triggerIndex===-1) triggerIndex = Math.floor(N/4);
+      if(triggerMode.value==='single'){
+        if(triggerIndex===-1){ triggerIndex = Math.floor(N/4); }
+      }
+
+      // extract display window around trigger
+      const displayPoints = 1024;
+      const halfWindow = Math.floor(displayPoints*0.25);
+      const start = Math.max(0, triggerIndex - halfWindow);
+      const end = Math.min(N, start + displayPoints);
+      const len = end - start;
+      const disp1 = new Float32Array(len); const disp2 = new Float32Array(len);
+      for(let i=0;i<len;i++){ disp1[i] = buf1[start+i]; disp2[i] = buf2[start+i]; }
+
+      capturedData = {dt:dt, samples:len, ch1:disp1, ch2:disp2};
+
+      // drawing
+      // clear and grid
+      drawGrid(cssW, cssH, Number(gridLines.value)||10, Number(brightness.value)||1);
+
+      // persistence handling
+      if(!persistence) ctx.clearRect(0,0,cssW,cssH);
+      // vertical scale: pixels per volt - keep default mapping 5 V -> half-height
+      const vscale = (cssH/2) / 5;
+
+      if(persistence){ // very simple persistence: draw previous frame with small alpha
+        ctx.save(); ctx.globalAlpha = 0.18; if(ch1Enable.checked) drawTrace(prevFrame1,'rgba(78,227,161,0.6)',cssW,cssH,vscale,0,1); if(ch2Enable.checked) drawTrace(prevFrame2,'rgba(40,160,255,0.6)',cssW,cssH,vscale,0,1); ctx.restore();
+      }
+
+      // draw traces
+      if(!xyMode){ if(ch1Enable.checked) drawTrace(disp1,'#4ee3a1',cssW,cssH,vscale,0,2); if(ch2Enable.checked) drawTrace(disp2,'#27c0ff',cssW,cssH,vscale,0,2); }
+      else {
+        // XY plot
+        ctx.save(); ctx.lineWidth=2; ctx.strokeStyle='#ffd66b'; ctx.beginPath();
+        const L = Math.min(disp1.length, disp2.length);
+        for(let i=0;i<L;i++){ const x = (disp1[i]/5)*cssW*0.5 + cssW*0.5; const y = cssH*0.5 - (disp2[i]/5)*cssH*0.5; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke(); ctx.restore();
+      }
+
+      // save previous frames for a simple persistence simulation
+      prevFrame1 = disp1.slice(0); prevFrame2 = disp2.slice(0);
+
+      // overlays
+      ctx.save(); ctx.font = '12px Inter, Arial'; ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fillText('Time/div: '+timebase.value+' ms/div', 10, 14); ctx.fillText('SR: '+sampleRate.value+' kS/s', 10, 32); ctx.fillText('Trig: '+triggerLevel.value+' V', 10, 50); ctx.restore();
+
+      if(running) requestAnimationFrame(render);
+    }
+
+    // retain previous frames for persistence
+    let prevFrame1 = null, prevFrame2 = null;
+
+    // FFT helper to display peak
+    function computeFFTAndShow(){ if(!capturedData){ alert('No captured data — run the scope first'); return; }
+      // pick next power of two >= samples
+      let N=1; while(N < capturedData.samples) N<<=1; const arr = new Float32Array(N); arr.set(capturedData.ch1.subarray(0, capturedData.samples));
+      try{ const mag = fftReal(arr); let peakIdx=1, peakVal=mag[1]; for(let i=2;i<mag.length;i++){ if(mag[i]>peakVal){ peakVal=mag[i]; peakIdx=i; } }
+        const freqRes = 1 / (capturedData.dt * N); const peakFreq = peakIdx * freqRes; alert('FFT peak frequency: '+peakFreq.toFixed(2)+' Hz');
+      } catch(e){ alert('FFT failed: '+e.message); }
+    }
+
+    // CSV export
+    function exportCSV(){ if(!capturedData){ alert('No capture available'); return; }
+      let csv = 'time(s),ch1(V),ch2(V)
+'; for(let i=0;i<capturedData.samples;i++){ csv += (i*capturedData.dt).toFixed(9)+','+capturedData.ch1[i].toFixed(6)+','+capturedData.ch2[i].toFixed(6)+'
+'; }
+      const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='capture.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // UI bindings
+    ['input','change'].forEach(ev=>{
+      [ch1Freq,ch1Amp,ch1Offset,ch2Freq,ch2Amp,ch2Offset,timebase,sampleRate,triggerLevel,gridLines,brightness].forEach(el=>el.addEventListener(ev, updateUILabels));
+    });
+
+    gridToggle.addEventListener('click', ()=>{ gridOn = !gridOn; gridToggle.classList.toggle('active'); gridToggle.textContent = gridOn? 'Grid':'No Grid'; });
+    persistenceToggle.addEventListener('click', ()=>{ persistence = !persistence; persistenceToggle.classList.toggle('active'); persistenceToggle.textContent = persistence? 'Persistence On':'Persistence'; });
+    xyToggle.addEventListener('click', ()=>{ xyMode = !xyMode; xyToggle.classList.toggle('active'); xyToggle.textContent = xyMode? 'XY':'XY'; });
+
+    runBtn.addEventListener('click', ()=>{ running = !running; runBtn.textContent = running? 'Running':'Stopped'; if(running) requestAnimationFrame(render); });
+    singleBtn.addEventListener('click', ()=>{ // capture single frame
+      running = false; runBtn.textContent='Stopped'; render(); });
+
+    snapBtn.addEventListener('click', ()=>{ // PNG
+      const link = document.createElement('a'); link.download='oscilloscope.png'; link.href = canvas.toDataURL('image/png'); link.click(); });
+    csvBtn.addEventListener('click', exportCSV);
+    fftBtn.addEventListener('click', computeFFTAndShow);
+
+    autozBtn.addEventListener('click', ()=>{
+      if(!capturedData){ alert('Run to capture first'); return; }
+      // simple autoscale: set channel amplitude to fit max sample to 3 V (so it's visible)
+      const mx1 = capturedData.ch1.reduce((a,b)=>Math.max(a, Math.abs(b)), 0);
+      const mx2 = capturedData.ch2.reduce((a,b)=>Math.max(a, Math.abs(b)), 0);
+      if(mx1>0) ch1Amp.value = (Number(ch1Amp.value) * (3 / mx1)).toFixed(2);
+      if(mx2>0) ch2Amp.value = (Number(ch2Amp.value) * (3 / mx2)).toFixed(2);
+      updateUILabels();
+    });
+
+    // keyboard shortcuts
+    window.addEventListener('keydown', (e)=>{ if(e.key===' ') runBtn.click(); if(e.key.toLowerCase()==='s') snapBtn.click(); if(e.key.toLowerCase()==='c') csvBtn.click(); if(e.key.toLowerCase()==='f') fftBtn.click(); });
+
+    // start
+    requestAnimationFrame(render);
+  })();
+  </script>
+</body>
+</html>

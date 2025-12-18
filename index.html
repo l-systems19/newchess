@@ -1,104 +1,210 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Games</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Games</title>
+  <style>
+    :root{
+      /* Background */
+      --bg-1: #070812; /* deep navy */
+      --bg-2: #0b1220; /* charcoal */
+      --bg-vignette: radial-gradient(60% 60% at 10% 15%, rgba(124,92,255,0.08), transparent 18%), radial-gradient(50% 50% at 90% 85%, rgba(61,220,186,0.06), transparent 18%);
 
-<style>
-* { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-body {
-  min-height:100vh;
-  background:
-    radial-gradient(circle at 20% 20%, #2b2bff33, transparent 40%),
-    radial-gradient(circle at 80% 80%, #ff2b2b33, transparent 40%),
-    linear-gradient(135deg, #0f0f14, #09090d);
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-.container {
-  width:90%;
-  max-width:900px;
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(14px);
-  border-radius:20px;
-  padding:40px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
-}
-header { text-align:center; margin-bottom:40px; }
-header h1 {
-  font-size:3rem;
-  letter-spacing:2px;
-  font-weight:700;
-  background: linear-gradient(90deg, #fff, #b8b8ff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.games {
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-  gap:25px;
-}
-.game-card {
-  position:relative;
-  display:block;
-  padding:30px;
-  border-radius:16px;
-  background: linear-gradient(145deg, #1a1a22, #111118);
-  box-shadow:0 10px 20px rgba(0,0,0,0.5),0 4px 6px rgba(0,0,0,0.3),inset 0 0 0 1px rgba(255,255,255,0.08);
-  cursor:pointer;
-  transition: transform 0.35s cubic-bezier(.25,.8,.25,1), box-shadow 0.35s cubic-bezier(.25,.8,.25,1);
-  text-decoration:none;
-  color:inherit;
-  overflow:hidden;
-  perspective:1000px;
-}
-.game-card::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:16px;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.08), transparent);
-  opacity:0;
-  transition: opacity 0.35s ease;
-  pointer-events:none;
-}
-.game-card:hover { transform: translateY(-12px) rotateX(2deg) rotateY(4deg) scale(1.03); box-shadow:0 25px 60px rgba(0,0,0,0.8),0 10px 20px rgba(0,0,0,0.4),inset 0 0 0 1px rgba(255,255,255,0.12); }
-.game-card:hover::before { opacity:1; }
-.game-title { font-size:1.6rem; margin-bottom:10px; }
-.game-desc { font-size:0.95rem; color:#bdbdff; opacity:0.9; }
-@media(hover:none){.game-card:hover{transform:translateY(-8px) scale(1.02); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08),0 10px 30px rgba(0,0,0,0.6);}}
-</style>
+      /* Card */
+      --card-top: #0f1724;
+      --card-bottom: #071024;
+      --card-gloss: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+
+      /* Accents */
+      --accent-primary: #7c5cff; /* indigo */
+      --accent-secondary: #3ddcba; /* teal */
+      --muted: #9fa8d6; /* soft muted */
+      --text: #e9ecff;
+
+      /* surfaces */
+      --glass: rgba(255,255,255,0.04);
+      --rim: inset 0 0 0 1px rgba(255,255,255,0.03);
+
+      /* sizing */
+      --radius: 14px;
+      --gap: 20px;
+      --thumb-size-sm:56px;
+      --thumb-size-lg:84px;
+      --max-width:980px;
+
+      /* elevation */
+      --elevation-1: 0 10px 28px rgba(2,6,23,0.54), 0 3px 8px rgba(2,6,23,0.30);
+      --elevation-2: 0 26px 64px rgba(2,6,23,0.66), 0 10px 26px rgba(2,6,23,0.34);
+      --card-shadow: var(--elevation-1), var(--rim);
+
+      color-scheme: dark;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+      background: var(--bg-vignette), linear-gradient(160deg,var(--bg-1),var(--bg-2));
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;align-items:center;justify-content:center;padding:28px;
+    }
+
+    /* page container */
+    .wrap{
+      width:100%;max-width:var(--max-width);
+      background: var(--card-gloss);
+      border-radius:22px;padding:30px;backdrop-filter:blur(14px);box-shadow:0 32px 90px rgba(2,6,23,0.65);
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    header{display:flex;align-items:center;gap:18px;margin-bottom:22px}
+    .brand{display:flex;flex-direction:column}
+    .brand h1{
+      font-size:1.6rem;letter-spacing:0.6px;margin-bottom:2px;margin-top:2px;
+      background: linear-gradient(90deg,var(--text), var(--accent-primary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand p{font-size:0.88rem;color:var(--muted);opacity:0.95}
+
+    /* games grid */
+    .games{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap);
+      list-style:none;padding:0;margin:0;
+    }
+
+    /* card */
+    .card{
+      display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--radius);
+      background: linear-gradient(180deg,var(--card-top), var(--card-bottom));
+      box-shadow: var(--card-shadow);
+      text-decoration:none;color:inherit;transition:transform .28s cubic-bezier(.2,.9,.3,1),box-shadow .28s,filter .28s;
+      overflow:visible;position:relative;min-height:78px;transform-style:preserve-3d;z-index:0;isolation:isolate;
+    }
+
+    /* subtle focus ring for keyboard users */
+    .card:focus{outline:none}
+    .card:focus-visible{box-shadow:var(--elevation-2);transform:translateY(-8px);border-radius:calc(var(--radius) + 2px)}
+
+    /* ground halo to reinforce floating */
+    .card::after{
+      content:"";position:absolute;left:12px;right:12px;bottom:-20px;height:34px;
+      background: radial-gradient(ellipse at center, rgba(12,18,32,0.70) 0%, rgba(12,18,32,0.12) 40%, transparent 75%);
+      filter: blur(16px);z-index:-1;border-radius:50%;transition:all .28s cubic-bezier(.2,.9,.3,1);
+      pointer-events:none;opacity:1;
+    }
+
+    /* hover elevation */
+    .card:hover{transform:translateY(-16px) scale(1.02) rotateX(0.35deg);box-shadow:var(--elevation-2);filter:brightness(1.02)}
+    .card:hover::after{bottom:-30px;transform:scale(1.06);filter:blur(20px);opacity:0.98}
+    .card:active{transform:translateY(-6px) scale(.998)}
+
+    /* thumbnail */
+    .thumb{
+      width:var(--thumb-size-lg);height:var(--thumb-size-lg);flex:0 0 var(--thumb-size-lg);
+      border-radius:12px;object-fit:cover;background:#07101a;border:2px solid rgba(255,255,255,0.03);
+      box-shadow:0 12px 30px rgba(2,6,23,0.48);display:block;transform:translateZ(10px);
+    }
+    /* subtle accent ring around thumbnail */
+    .thumb::after{content:"";position:absolute;border-radius:12px}
+
+    /* metadata */
+    .meta{display:flex;flex-direction:column;min-width:0}
+    .title{font-size:1.06rem;font-weight:700;margin-bottom:6px;line-height:1.05;color:var(--text)}
+    .title .accent{color:var(--accent-primary);background:linear-gradient(90deg, transparent, rgba(124,92,255,0.06));padding:0 4px;border-radius:6px}
+    .desc{font-size:0.92rem;color:var(--muted);opacity:0.95}
+    .meta-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+    /* small CTA / chevron */
+    .chev{font-size:0.98rem;color:var(--muted);opacity:0.9}
+
+    /* responsive tweaks */
+    @media (max-width:860px){
+      .games{grid-template-columns:repeat(1,1fr)}
+      :root{--thumb-size-lg:64px}
+      .wrap{padding:20px}
+    }
+
+    @media (max-width:420px){
+      .wrap{padding:14px}
+      .thumb{width:var(--thumb-size-sm);height:var(--thumb-size-sm);flex:0 0 var(--thumb-size-sm)}
+      .title{font-size:1rem}
+      .desc{font-size:0.82rem}
+    }
+
+    /* reduced motion */
+    @media (prefers-reduced-motion:reduce){
+      .card, .card:hover, .card:focus-visible{transition:none;transform:none}
+      .card::after{display:none}
+    }
+
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  </style>
 </head>
-
 <body>
-<div class="container">
-  <header><h1>Games</h1></header>
-  <section class="games">
+  <div class="wrap" role="main">
+    <header>
+      <div class="brand">
+        <h1>Games</h1>
+        <p>High-quality, responsive UI — thumbnails beside labels, optimized for mobile and desktop</p>
+      </div>
+    </header>
 
-    <a class="game-card" href="chess.html">
-      <div class="game-title">♟ Chess</div>
-      <div class="game-desc">Play classic chess against AI or another player</div>
-    </a>
+    <ul class="games" role="list">
 
-    <a class="game-card" href="checkers.html">
-      <div class="game-title">⛀ Checkers</div>
-      <div class="game-desc">Classic checkers with AI and mandatory-jump highlighting</div>
-    </a>
+      <li>
+        <a class="card" href="chess.html" aria-labelledby="title-chess" role="link">
+          <img class="thumb" src="chess.jpeg" alt="Chess thumbnail" loading="lazy" width="160" height="160">
+          <div class="meta">
+            <div class="meta-row">
+              <h3 id="title-chess" class="title">Chess</h3>
+            </div>
+            <p class="desc">Classic chess with local multiplayer and AI options.</p>
+          </div>
+        </a>
+      </li>
 
-    <a class="game-card" href="conway.html">
-      <div class="game-title">🟩 Conway's Game of Life</div>
-      <div class="game-desc">Explore cellular automata in a 2D grid</div>
-    </a>
+      <li>
+        <a class="card" href="checkers.html" aria-labelledby="title-checkers" role="link">
+          <img class="thumb" src="checkers.jpeg" alt="Checkers thumbnail" loading="lazy" width="160" height="160">
+          <div class="meta">
+            <div class="meta-row">
+              <h3 id="title-checkers" class="title">Checkers</h3>
+            </div>
+            <p class="desc">Classic checkers (mandatory-jump highlighting and AI opponent).</p>
+          </div>
+        </a>
+      </li>
 
-    <a class="game-card" href="othello.html">
-      <div class="game-title">⚫ Othello / Reversi</div>
-      <div class="game-desc">Flip discs against a strong AI</div>
-    </a>
+      <li>
+        <a class="card" href="conway.html" aria-labelledby="title-conway" role="link">
+          <img class="thumb" src="conway.gif" alt="Conway's Game of Life thumbnail" loading="lazy" width="160" height="160">
+          <div class="meta">
+            <div class="meta-row">
+              <h3 id="title-conway" class="title">Conway's Game of Life</h3>
+            </div>
+            <p class="desc">Explore cellular automata with adjustable grid and speed controls.</p>
+          </div>
+        </a>
+      </li>
 
-  </section>
-</div>
+      <li>
+        <a class="card" href="othello.html" aria-labelledby="title-othello" role="link">
+          <img class="thumb" src="othello.jpeg" alt="Othello thumbnail" loading="lazy" width="160" height="160">
+          <div class="meta">
+            <div class="meta-row">
+              <h3 id="title-othello" class="title">Othello / Reversi</h3>
+            </div>
+            <p class="desc">Flip discs against a strong AI or a friend.</p>
+          </div>
+        </a>
+      </li>
+
+    </ul>
+
+    <p class="sr-only" aria-hidden="false">Place the image files (chess.jpeg, checkers.jpeg, conway.gif, othello.jpeg) in the same folder as this HTML file.</p>
+  </div>
 </body>
 </html>
